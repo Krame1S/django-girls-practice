@@ -1,64 +1,62 @@
-name: CI Workflow
+name: CI
 
 on:
   push:
     branches:
       - main
-      - develop
-  pull_request:
-    branches:
-      - main
-      - develop
 
 jobs:
   test:
-    name: Run Tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-      - name: Run Django tests
-        run: python manage.py test --noinput
+      - run: pip install -r requirements.txt
+      - run: python manage.py test --noinput
 
   build:
-    name: Build Docker Image
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+      - uses: actions/checkout@v4
+      - name: Debug secrets
+        run: |
+          echo "USERNAME_EXISTS=${{ secrets.DOCKERHUB_USERNAME != '' }}" >> $GITHUB_ENV
+          echo "TOKEN_EXISTS=${{ secrets.DOCKERHUB_TOKEN != '' }}" >> $GITHUB_ENV
+      - name: Show debug info
+        run: |
+          echo "Username exists: $USERNAME_EXISTS"
+          echo "Token exists: $TOKEN_EXISTS"
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push image
-        uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: docker.io/krame1s/django-girls-practice:${{ github.ref_name }}
+          tags: docker.io/krame1s/django-girls-practice:main
 
   release:
-    name: Release Latest Image
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+      - uses: actions/checkout@v4
+      - name: Debug secrets
+        run: |
+          echo "USERNAME_EXISTS=${{ secrets.DOCKERHUB_USERNAME != '' }}" >> $GITHUB_ENV
+          echo "TOKEN_EXISTS=${{ secrets.DOCKERHUB_TOKEN != '' }}" >> $GITHUB_ENV
+      - name: Show debug info
+        run: |
+          echo "Username exists: $USERNAME_EXISTS"
+          echo "Token exists: $TOKEN_EXISTS"
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Tag and push latest
-        run: |
-          docker pull docker.io/krame1s/django-girls-practice:${{ github.ref_name }}
-          docker tag docker.io/krame1s/django-girls-practice:${{ github.ref_name }} docker.io/krame1s/django-girls-practice
+      - run: |
+          docker pull docker.io/krame1s/django-girls-practice:main
+          docker tag docker.io/krame1s/django-girls-practice:main docker.io/krame1s/django-girls-practice:latest
           docker push docker.io/krame1s/django-girls-practice:latest
