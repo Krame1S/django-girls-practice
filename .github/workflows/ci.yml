@@ -1,52 +1,64 @@
-name: CI
+name: CI Workflow
+
 on:
   push:
     branches:
       - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
 jobs:
   test:
+    name: Run Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -r requirements.txt
-      - run: python manage.py test --noinput
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run Django tests
+        run: python manage.py test --noinput
+
   build:
+    name: Build Docker Image
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - uses: actions/checkout@v4
-      - name: Debug secrets
-        run: |
-          echo "USERNAME_EXISTS=${{ secrets.DOCKERHUB_USERNAME != '' }}" >> $GITHUB_ENV
-          echo "TOKEN_EXISTS=${{ secrets.DOCKERHUB_TOKEN != '' }}" >> $GITHUB_ENV
-          echo "USERNAME_VALUE=${{ secrets.DOCKERHUB_USERNAME }}" >> $GITHUB_ENV
-      - name: Show debug info
-        run: |
-          echo "Username exists: $USERNAME_EXISTS"
-          echo "Token exists: $TOKEN_EXISTS"
-          echo "Username value: $USERNAME_VALUE"
-      - uses: docker/login-action@v2
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - name: Build and push image
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: docker.io/krame1s/django-girls-practice:main
+          tags: docker.io/krame1s/django-girls-practice:${{ github.ref_name }}
+
   release:
+    name: Release Latest Image
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v2
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - run: |
-          docker pull docker.io/krame1s/django-girls-practice:main
-          docker tag docker.io/krame1s/django-girls-practice:main docker.io/krame1s/django-girls-practice:latest
+      - name: Tag and push latest
+        run: |
+          docker pull docker.io/krame1s/django-girls-practice:${{ github.ref_name }}
+          docker tag docker.io/krame1s/django-girls-practice:${{ github.ref_name }} docker.io/krame1s/django-girls-practice
           docker push docker.io/krame1s/django-girls-practice:latest
