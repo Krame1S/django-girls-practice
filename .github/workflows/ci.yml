@@ -25,10 +25,12 @@ jobs:
         run: |
           echo "USERNAME_EXISTS=${{ secrets.DOCKERHUB_USERNAME != '' }}" >> $GITHUB_ENV
           echo "TOKEN_EXISTS=${{ secrets.DOCKERHUB_TOKEN != '' }}" >> $GITHUB_ENV
+          echo "USERNAME_VALUE=${{ secrets.DOCKERHUB_USERNAME }}" >> $GITHUB_ENV
       - name: Show debug info
         run: |
           echo "Username exists: $USERNAME_EXISTS"
           echo "Token exists: $TOKEN_EXISTS"
+          echo "Username value: $USERNAME_VALUE"
       - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -48,10 +50,12 @@ jobs:
         run: |
           echo "USERNAME_EXISTS=${{ secrets.DOCKERHUB_USERNAME != '' }}" >> $GITHUB_ENV
           echo "TOKEN_EXISTS=${{ secrets.DOCKERHUB_TOKEN != '' }}" >> $GITHUB_ENV
+          echo "USERNAME_VALUE=${{ secrets.DOCKERHUB_USERNAME }}" >> $GITHUB_ENV
       - name: Show debug info
         run: |
           echo "Username exists: $USERNAME_EXISTS"
           echo "Token exists: $TOKEN_EXISTS"
+          echo "Username value: $USERNAME_VALUE"
       - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
